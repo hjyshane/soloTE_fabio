@@ -21,31 +21,29 @@ sample_list <- list(M2M_88 = c("M2M88", 8),
 # Read final obj
 final <- readRDS("~/Slingshot_Tracy/Fabio_finalobj.rds")
 
-For (i in sample_list[[i]]) {
+for (i in seq_along(sample_list)) {
   # Directory
-  input_dir <- file.path(base_dir, sample_list[[i]][1], paste0(sample_list[[i]][1], "_SoloTE_output"), paste0(sample_list[[i]][1], "_classtes_MATRIX"))
   qs_dir <- file.path(base_dir, sample_list[[i]][1], paste0(sample_list[[i]][1], "_SoloTE_output"), "qsave")
 
-  
-  # Read object
-  sobj <- qs::qread(file.path(qs_dir, paste0("01__seurate_obj_", sample_list[[i]][1], "_.qs")))
+    # Read object
+  sobj <- qs::qread(file.path(qs_dir, paste0("01__seurate_obj_", sample_list[[i]][1], "_subfamily.qs")))
   
   # Find from final object
-  fobj <- subset(final, subset = sample == names(sample_list[i][1]))
+  fobj <- subset(final, subset = sample == names(sample_list[i]))
   
   # Clean barcode
-  rownames(fobj@meta.data) <- sub(paste0("_", sample_list[[i]][2], "", rownames(fobj@meta.data)))
+  rownames(fobj@meta.data) <- sub(paste0("_", sample_list[[i]][2]), "", rownames(fobj@meta.data))
   
   # Get intersect
   keep <- intersect(colnames(sobj), rownames(fobj@meta.data))
   sobj_filtered <- subset(sobj, cells = keep)
   
   # add metadata
-  ord <- match(Cells(sobj_filtered), rownames(fobj@meta.data))
+  ord <- match(Seurat::Cells(sobj_filtered), rownames(fobj@meta.data))
   meta <- fobj@meta.data[ord, , drop = FALSE]
   sobj_filtered@meta.data <- cbind(sobj_filtered@meta.data, meta)
   
   # save
-  qs::qsave(sobj_filtered, file.path(file.path(qs_dir, paste0("02__filtered_obj_", sample_list[[i]][1], "_.qs"))))
+  qs::qsave(sobj_filtered, file.path(file.path(qs_dir, paste0("02__filtered_obj_", sample_list[[i]][1], "_subfamily.qs"))))
 
 }
