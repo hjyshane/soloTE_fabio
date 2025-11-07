@@ -5,7 +5,7 @@ set.seed(83)
 
 options(future.globals.maxSize = 128000 * 1024^2)
 
-base_dir <-  "~/SoloTE/"
+base_dir <-  "~/SoloTE"
 
 folder_list <- list("M2M88", "M1M35", "M0M57", "M0M8", "F2M13", "F1M75", "F0M28", "F0M2")
 
