@@ -85,7 +85,8 @@ for (i in sigmarkerlist){
 sigmarkers <- bind_rows(sigmarkerlist)
 rownames(sigmarkers) <- NULL
 
-sigtemarkers <- sigmarkers[grep("^SoloTE",sigmarkers$gene),]
+sigtemarkers <- sigmarkers[grep("^SoloTE",sigmarkers$gene),] %>%
+  dplyr::filter(cell %in% c("NSC", "NPC", "DG"))
 
 # check
 sigmarkers
@@ -93,4 +94,53 @@ sigtemarkers
 
 # save
 readr::write_csv(sigmarkers, file = file.path(directory[["markers_dir"]], "sig_gene-subfamily.csv"))
-readr::write_csv(sigtemarkers, file = file.path(directory[["markers_dir"]], "sig_te_gene-subfamily.csv"))
+readr::write_csv(sigtemarkers, file = file.path(directory[["markers_dir"]], "sig_te_gene-subfamily_NSC-NPC-DG.csv"))
+
+# volcanoplot
+nsc <- sigtemarkers %>%
+  filter(cell == "NSC")
+
+npc <- sigtemarkers %>%
+  filter(cell == "NPC")
+
+dg <- sigtemarkers %>%
+  filter(cell == "DG")
+
+a <- EnhancedVolcano::EnhancedVolcano(nsc,
+                                 lab = nsc$gene,
+                                 x = 'avg_log2FC',
+                                 y = 'p_val_adj',
+                                 pCutoff = 0.05,
+                                 FCcutoff = 0.2,
+                                 pointSize = 3.0,
+                                 title = "NSC",
+                                 labSize = 3.0,
+                                 boxedLabels = T,
+                                 drawConnectors = T) |
+
+EnhancedVolcano::EnhancedVolcano(npc,
+                                 lab = npc$gene,
+                                 x = 'avg_log2FC',
+                                 y = 'p_val_adj',
+                                 pCutoff = 0.05,
+                                 FCcutoff = 0.2,
+                                 pointSize = 3.0,
+                                 title = "NPC",
+                                 labSize = 3.0,
+                                 boxedLabels = T,
+                                 drawConnectors = T) |
+
+EnhancedVolcano::EnhancedVolcano(dg,
+                                 lab = dg$gene,
+                                 x = 'avg_log2FC',
+                                 y = 'p_val_adj',
+                                 pCutoff = 0.05,
+                                 FCcutoff = 0.2,
+                                 pointSize = 3.0,
+                                 title = "DG",
+                                 labSize = 3.0,
+                                 boxedLabels = T,
+                                 drawConnectors = T) 
+
+ggplot2::ggsave(a, filename = file.path(directory[["plot_dir"]], "volcano.png"), width = 24, height = 12, dpi = 300, bg = "white")
+
