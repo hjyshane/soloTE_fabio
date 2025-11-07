@@ -1,5 +1,6 @@
 *.rds
 *.qs
+*.png
 .Rhistory
 .Rproj.user
 .RData
