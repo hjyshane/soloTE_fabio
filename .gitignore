@@ -2,4 +2,6 @@
 *.qs
 .Rhistory
 .Rproj.user
+.RData
 OUTPUTS.Rproj
+markers
