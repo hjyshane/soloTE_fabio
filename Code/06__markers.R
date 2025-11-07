@@ -51,8 +51,8 @@ markerlist <- list()
 for (ct in celltype) {
   sub <- subset(obj_sub, subset = tracy_clusters == ct)
   data <- FindMarkers(sub,
-                      ident.1 = "zeroM",
-                      ident.2 = "withM"
+                      ident.1 = "withM",
+                      ident.2 = "zeroM"
                       )
   
   data$cell <- ct
@@ -66,7 +66,7 @@ markers <- bind_rows(markerlist)
 rownames(markers) <- NULL
 
 # save
-readr::write_csv(markers, file = file.path(directory[["markers_dir"]], "all_genes-subfamily.csv"))
+readr::write_csv(markers, file = file.path(directory[["markers_dir"]], "all_genes-subfamily_reverse.csv"))
 
 # sig marker
 sigmarkerlist <- list()
@@ -93,8 +93,8 @@ sigmarkers
 sigtemarkers
 
 # save
-readr::write_csv(sigmarkers, file = file.path(directory[["markers_dir"]], "sig_gene-subfamily.csv"))
-readr::write_csv(sigtemarkers, file = file.path(directory[["markers_dir"]], "sig_te_gene-subfamily_NSC-NPC-DG.csv"))
+readr::write_csv(sigmarkers, file = file.path(directory[["markers_dir"]], "sig_gene-subfamily_reverse.csv"))
+readr::write_csv(sigtemarkers, file = file.path(directory[["markers_dir"]], "sig_te_gene-subfamily_NSC-NPC-DG_reverse.csv"))
 
 # volcanoplot
 nsc <- sigtemarkers %>%
@@ -142,5 +142,5 @@ EnhancedVolcano::EnhancedVolcano(dg,
                                  boxedLabels = T,
                                  drawConnectors = T) 
 
-ggplot2::ggsave(a, filename = file.path(directory[["plot_dir"]], "volcano.png"), width = 24, height = 12, dpi = 300, bg = "white")
+ggplot2::ggsave(a, filename = file.path(directory[["plot_dir"]], "volcano_reverse.png"), width = 24, height = 12, dpi = 300, bg = "white")
 
