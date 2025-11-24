@@ -22,7 +22,7 @@ directory <- list(
   plot_dir = file.path(base_dir, "OUTPUTS", "PLOTS")
 )
 
-fabio <- readRDS("~/Slingshot_Tracy/Fabio_finalobj.rds")
+fabio <- readRDS("/Slingshot_Tracy/Fabio_finalobj.rds")
 solo <- qs::qread(file.path(directory[["qsave_dir"]], "03__fina_subfamily.qs"))
 
 #### UMAP ----
@@ -177,7 +177,7 @@ ggsave(filename = file.path(directory[["plot_dir"]], "feature_TE.png"),
 #### QC plots ----
 
 qc <- Seurat::VlnPlot(
-  solo,
+  fabio,
   features = c("nFeature_RNA", "nCount_RNA", "percent.mt", "percent.ribo"),
   group.by = "group2",
   ncol = 2,
@@ -253,6 +253,15 @@ ggsave(filename = file.path(directory[["plot_dir"]], "cellCycle_violin.png"),
       plot = violin,
       width = 8, height = 6, dpi = 300, bg = "white")
 
-# F3 subset and deg and see
-# GO term plot?? - hold
-# slingshot comparison between
+
+#### Subset SoloTE-L1Md-F3 cells ----
+# SoloTE-L1Md-F3 subset and deg and see
+# cells expressing SoloTE-L1Md-F3
+Idents(solo) <- "tracy_clusters"
+cells_L1MdF3 <- WhichCells(solo, expression = `SoloTE-L1Md-F3` > 0)
+
+fabio_L1MdF3 <- subset(fabio, cells = cells_L1MdF3)
+fabio_notL1MdF3 <- subset(fabio, cells = setdiff(Cells(fabio), cells_L1MdF3))
+
+# comparing two subsets
+Idents(fabio_L1MdF3) <- "tracy_clusters"

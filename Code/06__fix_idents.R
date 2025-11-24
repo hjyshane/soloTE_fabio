@@ -30,8 +30,8 @@ for (i in seq_along(directory)) {
 
 # SoloTE list
 # read
-obj_sub <- qs::qread(file.path(directory[["qsave_dir"]], "02__processed_solote_subfamily.qs"))
-fabio <- readRDS("~/Slingshot_Tracy/Fabio_finalobj.rds")
+obj_sub <- qs::qread(file.path(directory[["qsave_dir"]], "02__processed_solote_locustes.qs"))
+fabio <- qs::qread(file.path(directory[["qsave_dir"]], "00__fabio_final_JY.qs"))
 
 # fix idents in cluster
 Idents(obj_sub) <- "tracy_clusters"
@@ -56,7 +56,23 @@ obj_sub <- RenameIdents(obj_sub,
 
 Idents(obj_sub) -> obj_sub@meta.data$tracy_clusters
 
-qs::qsave(obj_sub, file.path(directory[["qsave_dir"]], "03__final_subfamily.qs"))
+levels(obj_sub)
+
+# cell id fix
+# obj_sub의 cell id가 8_CGTAGGGCACGGGTCT-1 to CGTAGGGCACGGGTCT-1_8 형식으로 바꾸기
+obj_re <- RenameCells(obj_sub, new.names = paste0(
+  sapply(strsplit(colnames(obj_sub), split = "_"), `[`, 2),
+  "_",
+  sapply(strsplit(colnames(obj_sub), split = "_"), `[`, 1)
+))
+
+head(colnames(obj_re))
+
+# subset solo to keep only cells in fabio
+keep <- intersect(colnames(obj_re), colnames(fabio))
+obj_sub <- subset(obj_re, cells = keep)
+
+qs::qsave(obj_sub, file.path(directory[["qsave_dir"]], "03__final_locustes.qs"))
 
 
 

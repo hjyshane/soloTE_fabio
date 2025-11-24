@@ -26,7 +26,7 @@ for (i in seq_along(sample_list)) {
   qs_dir <- file.path(base_dir, sample_list[[i]][1], paste0(sample_list[[i]][1], "_SoloTE_output"), "qsave")
 
     # Read object
-  sobj <- qs::qread(file.path(qs_dir, paste0("01__seurate_obj_", sample_list[[i]][1], "_subfamily.qs")))
+  sobj <- qs::qread(file.path(qs_dir, paste0("01__seurate_obj_", sample_list[[i]][1], "_locustes.qs")))
   
   # Find from final object
   fobj <- subset(final, subset = sample == names(sample_list[i]))
@@ -44,6 +44,6 @@ for (i in seq_along(sample_list)) {
   sobj_filtered@meta.data <- cbind(sobj_filtered@meta.data, meta)
   
   # save
-  qs::qsave(sobj_filtered, file.path(file.path(qs_dir, paste0("02__filtered_obj_", sample_list[[i]][1], "_subfamily.qs"))))
+  qs::qsave(sobj_filtered, file.path(file.path(qs_dir, paste0("02__filtered_obj_", sample_list[[i]][1], "_locustes.qs"))))
 
 }

@@ -15,6 +15,4 @@
 # Load the R module (adjust for your environment)
 module purge
 module load R-4.3.3 ## change this to curret R version
-Rscript /igm/home/hxy008/SoloTE/OUTPUTS/Code/01__Create_Seurat_loop.R
-Rscript /igm/home/hxy008/SoloTE/OUTPUTS/Code/02__Filter_with_final.R
 Rscript /igm/home/hxy008/SoloTE/OUTPUTS/Code/03__process.R

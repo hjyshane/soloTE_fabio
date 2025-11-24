@@ -31,18 +31,18 @@ sample_list <- list(F0M_28 = c("F0M28", 1),
                     M2M_88 = c("M2M88", 8))
 
 # Read
-obj <- qs::qread(file.path(directory[["qsave_dir"]], "01__merged_solote_subfamily.qs"))
+obj <- qs::qread(file.path(directory[["qsave_dir"]], "01__merged_solote_locustes.qs"))
 
 
 # process
 #run normalization, integration, and clustering
 obj <- obj %>%
-  SCTransform(conserve.memory = T) %>% 
-  RunPCA(npcs = 30, verbose = F) %>% 
-  IntegrateLayers(method = HarmonyIntegration, orig.reduction = "pca", new.reduction = 'harmony', assay = "SCT", verbose = FALSE) %>% 
-  FindNeighbors(reduction = "harmony", dims = 1:30) %>% 
-  FindClusters(resolution = 0.4, cluster.name = "harmony_clusters") %>% 
-  RunUMAP(dims = 1:30) 
+  SCTransform(conserve.memory = T) %>%
+  RunPCA(npcs = 30, verbose = F) %>%
+  IntegrateLayers(method = HarmonyIntegration, orig.reduction = "pca", new.reduction = 'harmony', assay = "SCT", verbose = FALSE) %>%
+  FindNeighbors(reduction = "harmony", dims = 1:30) %>%
+  FindClusters(resolution = 0.4, cluster.name = "harmony_clusters") %>%
+  RunUMAP(dims = 1:30)
 
 DefaultAssay(obj) <- "RNA"
 obj <- NormalizeData(obj)
@@ -52,10 +52,10 @@ DefaultAssay(obj) <- "RNA"
 obj <- JoinLayers(obj)
 
 # save
-qs::qsave(obj, file.path(directory[["qsave_dir"]], "02__processed_solote_subfamily.qs"))
+qs::qsave(obj, file.path(directory[["qsave_dir"]], "02__processed_solote_locustes.qs"))
 
 # read
-obj <- qs::qread(file.path(directory[["qsave_dir"]], "02__processed_solote_subfamily.qs"))
+obj <- qs::qread(file.path(directory[["qsave_dir"]], "02__processed_solote_locustes.qs"))
 
 # check
 DefaultAssay(obj) <- "RNA"
@@ -81,5 +81,3 @@ DotPlot(obj, features = c("Pdgfra", "Reln", "Prox1", "Tle4", "Bcl11b", "Adarb2",
 DefaultAssay(obj) <- "RNA"
 Idents(obj) <- "tracy_clusters"
 FeaturePlot(obj, features = c("SoloTE-LINE", "SoloTE-SINE"), split.by = "group2", label = T, repel = T, cols = c("blue", "green"))
-
-

@@ -31,7 +31,7 @@ for (i in seq_along(sample_list)) {
   
   
   # Read object
-  sobj <- qs::qread(file.path(qs_dir, paste0("02__filtered_obj_", sample_list[[i]][1], "_subfamily.qs")))
+  sobj <- qs::qread(file.path(qs_dir, paste0("02__filtered_obj_", sample_list[[i]][1], "_locustes.qs")))
  
   # process 
   Seurat::DefaultAssay(sobj) <- "RNA"
@@ -54,6 +54,6 @@ for (i in seq_along(sample_list)) {
   sobj <- Seurat::NormalizeData(sobj, assay = "RNA")
   
   # save
-  qs::qsave(sobj_filtered, file.path(file.path(qs_dir, paste0("03__processed_obj_", sample_list[[i]][1], "_subfamily.qs"))))
+  qs::qsave(sobj, file.path(file.path(qs_dir, paste0("03__processed_obj_", sample_list[[i]][1], "_locustes.qs"))))
   
 }

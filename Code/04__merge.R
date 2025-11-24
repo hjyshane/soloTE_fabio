@@ -31,13 +31,13 @@ obj_list <- list()
 for (i in seq_along(sample_list)) {
   # Directory
   qs_dir <- file.path(base_dir, sample_list[[i]][1], paste0(sample_list[[i]][1], "_SoloTE_output"), "qsave")
-  
+
   # Read object
-  obj_list[[names(sample_list[i])]] <- qs::qread(file.path(qs_dir, paste0("02__filtered_obj_", sample_list[[i]][1], "_subfamily.qs")))
-  
+  obj_list[[names(sample_list[i])]] <- qs::qread(file.path(qs_dir, paste0("03__processed_obj_", sample_list[[i]][1], "_locustes.qs")))
+
   # rename cells to prevent dup cell names
   obj_list[[names(sample_list[i])]] <- RenameCells(obj_list[[names(sample_list[i])]], add.cell.id = i)
-  
+
 }
 
 # prepare merge list
@@ -50,6 +50,4 @@ mobj <- merge(x = obj_list[[1]], y = merge_list)
 print(table(mobj@meta.data$sample))
 
 # save
-qs::qsave(mobj, file.path(directory[["qsave_dir"]], "01__merged_solote_subfamily.qs"))
-
-
+qs::qsave(mobj, file.path(directory[["qsave_dir"]], "01__merged_solote_locustes.qs"))

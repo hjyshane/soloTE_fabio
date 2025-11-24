@@ -11,7 +11,7 @@ folder_list <- list("M2M88", "M1M35", "M0M57", "M0M8", "F2M13", "F1M75", "F0M28"
 
 for (i in seq_along(folder_list)) {
   # Directory
-  input_dir <- file.path(base_dir, folder_list[[i]], paste0(folder_list[[i]], "_SoloTE_output"), paste0(folder_list[[i]], "_subfamilytes_MATRIX"))
+  input_dir <- file.path(base_dir, folder_list[[i]], paste0(folder_list[[i]], "_SoloTE_output"), paste0(folder_list[[i]], "_locustes_MATRIX"))
   qs_dir <- file.path(base_dir, folder_list[[i]], paste0(folder_list[[i]], "_SoloTE_output"), "qsave")
 
   dir.create(qs_dir)
@@ -43,5 +43,5 @@ for (i in seq_along(folder_list)) {
     assay = "RNA")
 
   # save
-  qs::qsave(sobj, file = file.path(qs_dir, paste0("01__seurate_obj_", folder_list[[i]], "_subfamily.qs")))
+  qs::qsave(sobj, file = file.path(qs_dir, paste0("01__seurate_obj_", folder_list[[i]], "_locustes.qs")))
 }
