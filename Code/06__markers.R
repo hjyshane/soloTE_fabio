@@ -54,10 +54,10 @@ for (ct in celltype) {
                       ident.1 = "withM",
                       ident.2 = "zeroM"
                       )
-  
+
   data$cell <- ct
   data$gene <- rownames(data)
-  
+
   markerlist[[ct]] <- data
 }
 
@@ -140,7 +140,6 @@ EnhancedVolcano::EnhancedVolcano(dg,
                                  title = "DG",
                                  labSize = 3.0,
                                  boxedLabels = T,
-                                 drawConnectors = T) 
+                                 drawConnectors = T)
 
 ggplot2::ggsave(a, filename = file.path(directory[["plot_dir"]], "volcano_reverse.png"), width = 24, height = 12, dpi = 300, bg = "white")
-

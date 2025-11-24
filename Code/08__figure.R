@@ -1,3 +1,5 @@
+
+# %%
 # Library load
 library(Seurat)
 library(ggplot2)
@@ -13,11 +15,14 @@ library(ComplexUpset)
 library(Nebulosa)
 library(clusterProfiler)
 
+# %%
 # set seed
 set.seed(83)
 
+# %%
 options(future.globals.maxSize = 128000 * 1024^2)
 
+# %%
 # set directory
 base_dir <-  "~/SoloTE"
 
@@ -27,6 +32,7 @@ directory <- list(
   plot_dir = file.path(base_dir, "OUTPUTS", "PLOTS")
 )
 
+# %%
 fabio <-  qs::qread(file.path(directory[["qsave_dir"]], "00__fabio_final_JY.qs"))
 solo <- qs::qread(file.path(directory[["qsave_dir"]], "03__final_subfamily.qs"))
 
@@ -713,6 +719,165 @@ nebulosa_cc <- Nebulosa::plot_density(fabio_sub,
                                     features = c("S.Score", "G2M.Score"),
                                     reduction = "umap",
                                     pal = "inferno")
+
+#### Heatmap with DEG by sample ----
+Idents(sub) <- "tracy_clusters"
+deg_dg <- read.csv(file.path(directory[["markers_dir"]], "Tracy_deg", "DG_withM_DG_zeroM.csv"))
+deg_npc <- read.csv(file.path(directory[["markers_dir"]], "Tracy_deg", "NPC_withM_NPC_zeroM.csv"))
+deg_nsc <- read.csv(file.path(directory[["markers_dir"]], "Tracy_deg", "NSC_withM_NSC_zeroM.csv"))
+
+sig_dg <- deg_dg %>%
+  dplyr::mutate(gene = X,
+                direction = ifelse(avg_log2FC > 0, "up", "down"), X = NULL) %>%
+  dplyr::filter(p_val_adj < 0.05 & abs(avg_log2FC) > 0.25)
+
+sig_npc <- deg_npc %>%
+  dplyr::mutate(gene = X,
+                direction = ifelse(avg_log2FC > 0, "up", "down"), X = NULL) %>%
+  dplyr::filter(p_val_adj < 0.05 & abs(avg_log2FC) > 0.25)
+
+sig_nsc <-deg_nsc %>%
+  dplyr::mutate(gene = X,
+                direction = ifelse(avg_log2FC > 0, "up", "down"), X = NULL) %>%
+  dplyr::filter(p_val_adj < 0.05 & abs(avg_log2FC) > 0.25)
+
+
+create_deg_heatmap <- function(seurat_obj, deg_df, cell_type, top_n = 50) {
+
+  # 특정 세포 타입만 subset
+  cells_subset <- seurat_obj@meta.data %>%
+    dplyr::filter(tracy_clusters == cell_type) %>%
+    rownames()
+
+  # DEG 유전자 선택 (top N개 또는 전체)
+  if(nrow(deg_df) > top_n) {
+    selected_genes <- deg_df %>%
+      dplyr::arrange(desc(abs(avg_log2FC))) %>%
+      dplyr::slice_head(n = top_n) %>%
+      dplyr::pull(gene)
+  } else {
+    selected_genes <- deg_df %>% dplyr::pull(gene)
+  }
+
+  # Expression data 추출
+  exp_data <- Seurat::GetAssayData(seurat_obj, assay = 'RNA', layer = "data") %>%
+    as.data.frame() %>%
+    dplyr::filter(rownames(.) %in% selected_genes) %>%
+    dplyr::select(all_of(cells_subset))
+
+  # Metadata 준비
+  meta_subset <- seurat_obj@meta.data[cells_subset, ] %>%
+    dplyr::select(group2, sample) %>%
+    dplyr::arrange(group2, sample)
+
+  # 샘플별 평균 expression 계산
+  sample_list <- unique(meta_subset$sample)
+  avg_exp_by_sample <- sapply(sample_list, function(smp) {
+    cells <- rownames(meta_subset)[meta_subset$sample == smp]
+    if(length(cells) > 0) {
+      rowMeans(exp_data[, cells, drop = FALSE])
+    } else {
+      rep(NA, nrow(exp_data))
+    }
+  })
+
+  # 컬럼 순서 정렬 (group2 기준)
+  sample_group <- meta_subset %>%
+    dplyr::distinct(sample, group2) %>%
+    dplyr::arrange(group2, sample)
+
+  avg_exp_by_sample <- avg_exp_by_sample[, sample_group$sample]
+
+  # Z-score normalization
+  heatmap_scaled <- t(scale(t(avg_exp_by_sample)))
+
+  # NA 제거 (모든 값이 같은 유전자)
+  heatmap_scaled <- heatmap_scaled[complete.cases(heatmap_scaled), ]
+
+  # Column annotation
+  col_ha <- HeatmapAnnotation(
+    Group = sample_group$group2,
+    col = list(Group = c("withM" = "#E64B35", "zeroM" = "#4DBBD5")),
+    annotation_name_side = "left",
+    annotation_legend_param = list(
+      Group = list(title = "Group")
+    )
+  )
+
+  # Row annotation (Up/Down regulation)
+  gene_direction <- deg_df %>%
+    dplyr::filter(gene %in% rownames(heatmap_scaled)) %>%
+    dplyr::arrange(match(gene, rownames(heatmap_scaled)))
+
+  # row_ha <- rowAnnotation(
+  #   Direction = ifelse(gene_direction$avg_log2FC > 0, "Up", "Down"),
+  #   col = list(Direction = c("Up" = "#E64B35", "Down" = "#4DBBD5")),
+  #   annotation_legend_param = list(
+  #     Direction = list(title = "Regulation")
+  #   )
+  # )
+
+  # Color scale
+  col_fun <- colorRamp2(c(-2, 0, 2), c("#3B4992", "white", "#EE0000"))
+
+  # Heatmap 생성
+  ht <- Heatmap(
+    heatmap_scaled,
+    name = "Z-score",
+    col = col_fun,
+
+    # Row settings
+    cluster_rows = TRUE,
+    show_row_names = TRUE,
+    row_names_gp = gpar(fontsize = 6),
+    row_names_side = "left",
+    # left_annotation = row_ha,
+
+    # Column settings
+    cluster_columns = FALSE,
+    show_column_names = TRUE,
+    column_names_gp = gpar(fontsize = 8),
+    column_names_rot = 90,
+    top_annotation = col_ha,
+
+    # Legend
+    show_heatmap_legend = TRUE,
+    heatmap_legend_param = list(
+      title = "Z-score",
+      title_position = "leftcenter-rot",
+      legend_height = unit(4, "cm")
+    ),
+
+    # Title
+    column_title = paste0(cell_type, " DEGs"),
+    column_title_gp = gpar(fontsize = 14, fontface = "bold"),
+
+    # Size
+    width = unit(10, "cm"),
+    height = unit(14, "cm")
+  )
+
+  return(ht)
+}
+
+# 각 세포 타입별 Heatmap 생성
+ht_dg <- create_deg_heatmap(sub, sig_dg, "DG", top_n = 1000)
+ht_npc <- create_deg_heatmap(sub, sig_npc, "NPC", top_n = 1000)
+ht_nsc <- create_deg_heatmap(sub, sig_nsc, "NSC", top_n = 1000)
+
+# 개별 출력
+png(file.path(directory[["plot_dir"]], "DG_DEG_heatmap_all.png"), width = 12, height = 16, units = "in", res = 300, bg = "white")
+draw(ht_dg)
+dev.off()
+
+png(file.path(directory[["plot_dir"]], "NPC_DEG_heatmap_all.png"), width = 12, height = 16, units = "in", res = 300, bg = "white")
+draw(ht_npc)
+dev.off()
+
+png(file.path(directory[["plot_dir"]], "NSC_DEG_heatmap_all.png"), width = 12, height = 16, units = "in", res = 300, bg = "white")
+draw(ht_nsc)
+dev.off()
+
 
 #### Subset SoloTE-L1Md-F3 cells ----
 # SoloTE-L1Md-F3 subset and deg and see
