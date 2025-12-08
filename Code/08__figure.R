@@ -956,13 +956,13 @@ mki67 <- Seurat::GetAssayData(fabio, assay  = "RNA", slot = "data")["Mki67", ]
 tbr2 <-  Seurat::GetAssayData(fabio, assay  = "RNA", slot = "data")["Eomes", ]
 neurod1 <- Seurat::GetAssayData(fabio, assay  = "RNA", slot = "data")["Neurod1", ]
 
-hkratio <- table(meta[hopx > 0 & mki67 > 0]) / table(meta[hopx>0])
-tkratio <- table(meta[tbr2 > 0 & mki67 > 0]) / table(meta[tbr2>0])
+hkratio <- table(meta[hopx > 0.3 & mki67 > 0.3]) / table(meta[hopx>0.3])
+tkratio <- table(meta[tbr2 > 0.3 & mki67 > 0.3]) / table(meta[tbr2>0.3])
 
-nd1ratio <- table(meta[neurod1 > 0]) / table(meta)
-hopxratio <- table(meta[hopx > 0]) / table(meta)
-tbr2ratio <- table(meta[tbr2 > 0]) / table(meta)
-mki67ratio <- table(meta[mki67 > 0]) / table(meta)
+nd1ratio <- table(meta[neurod1 > 0.3]) / table(meta)
+hopxratio <- table(meta[hopx > 0.3]) / table(meta)
+tbr2ratio <- table(meta[tbr2 > 0.3]) / table(meta)
+mki67ratio <- table(meta[mki67 > 0.3]) / table(meta)
 
 
 plot_data <- data.frame(
@@ -996,3 +996,4 @@ DefaultAssay(sub) <- "RNA"
 Idents(sub) <- "tracy_clusters"
 sub <- NormalizeData(sub)
 Seurat::VlnPlot(sub, features = c("Hopx", "Mki67", "Eomes"), layer = "data", )
+
