@@ -1,19 +1,19 @@
 
 # %%
 # Library load
-library(Seurat)
-library(ggplot2)
-library(patchwork)
-library(qs)
+library(Seurat, lib.loc = .libPaths()[2])
+library(ggplot2, lib.loc = .libPaths()[1])
+library(patchwork, lib.loc = .libPaths()[1])
+library(qs, lib.loc = .libPaths()[2])
 library(tidyverse)
 library(SeuratExtend)
 library(vioplot)
-library(VennDiagram)
-library(ggvenn)
-library(RColorBrewer)
-library(ComplexUpset)
-library(Nebulosa)
-library(clusterProfiler)
+library(VennDiagram, lib.loc = .libPaths()[1])
+library(ggvenn, lib.loc = .libPaths()[1])
+library(RColorBrewer, lib.loc = .libPaths()[2])
+library(ComplexUpset, lib.loc = .libPaths()[1])
+library(Nebulosa, lib.loc = .libPaths()[2])
+library(clusterProfiler, lib.loc = .libPaths()[2])
 
 # %%
 # set seed
@@ -35,6 +35,7 @@ directory <- list(
 # %%
 fabio <-  qs::qread(file.path(directory[["qsave_dir"]], "00__fabio_final_JY.qs"))
 solo <- qs::qread(file.path(directory[["qsave_dir"]], "03__final_subfamily.qs"))
+sub <-  readRDS("~/Slingshot_Tracy/Fabio_sub.rds")
 
 # factor level
 fabio$group2 <- factor(
@@ -153,7 +154,7 @@ ggsave(filename = file.path(directory[["plot_dir"]], "cellProportion.png"),
       width = 5, height = 8, dpi = 300)
 
 #### DEG vandiagram ----
-deg_dg_org <- read.csv(file.path(directory[["markers_dir"]], "Tracy_deg", "DG_withM_DG_zeroM_1.csv"))
+deg_dg_org <- read.csv(file.path(directory[["markers_dir"]], "Tracy_deg", "DG_withM_DG_zeroM.csv"))
 deg_npc_org <- read.csv(file.path(directory[["markers_dir"]], "Tracy_deg", "NPC_withM_NPC_zeroM.csv"))
 deg_nsc_org <- read.csv(file.path(directory[["markers_dir"]], "Tracy_deg", "NSC_withM_NSC_zeroM.csv"))
 
@@ -887,3 +888,111 @@ cells_L1MdF3 <- WhichCells(solo, expression = `SoloTE-L1Md-F3` > 0)
 
 fabio_L1MdF3 <- subset(fabio, cells = cells_L1MdF3)
 fabio_notL1MdF3 <- subset(fabio, cells = setdiff(Cells(fabio), cells_L1MdF3))
+
+
+#### cell ratio for gene expression ----
+# calculate the ratio of cells expressing a gene in each group
+calculate_cell_ratio <- function(seurat_obj, gene) {
+  # Get the expression matrix for the gene
+  gene_expr <- Seurat::GetAssayData(seurat_obj, assay = 'RNA', slot = 'data')[gene, ]
+  # Get the metadata for the group
+  group_meta <- seurat_obj$group2
+  # Calculate the ratio of cells expressing the gene in each group
+  cell_ratio <- table(group_meta[gene_expr > 0]) / table(group_meta)
+  return(cell_ratio)
+}
+
+# Calculate the cell ratio for each gene
+genes_of_interest <- c("Mki67", "Hopx", "Eomes", "Sox2", "Gfap")
+
+cell_ratios <- lapply(genes_of_interest, function(gene) {
+  calculate_cell_ratio(fabio, gene)
+})
+
+# Co-express or not co-express
+co_express <- function(seurat_obj, gene1, gene2) {
+  # Get the expression matrix for the genes
+  gene1_expr <- Seurat::GetAssayData(seurat_obj, assay = 'RNA', slot = 'data')[gene1, ]
+  gene2_expr <- Seurat::GetAssayData(seurat_obj, assay = 'RNA', slot = 'data')[gene2, ]
+  # Get the metadata for the group
+  group_meta <- seurat_obj$group2
+  # Calculate the ratio of cells co-expressing the genes in each group
+  co_expr <- table(group_meta[gene1_expr > 0 & gene2_expr > 0]) / table(group_meta)
+  return(co_expr)
+}
+
+# Calculate the co-expression ratio for each pair of genes
+co_expression_ratios <- list()
+gene_pairs <- list(c("Hopx", "Mki67"), c("Eomes", "Mki67"), c("Sox2", "Mki67"), c("Mki67", "Hopx"), c("Mki67", "Eomes"), c("Mki67", "Sox2"), c("Hopx", "Mki67"), c("Eomes", "Hopx"), c("Sox2", "Hopx"), c("Eomes", "Sox2"), c("Sox2", "Eomes"))
+for (pair in gene_pairs) {
+  co_expression_ratios[[paste(pair, collapse = "_")]] <- co_express(fabio, pair[1], pair[2])
+}
+
+# not co-express
+not_co_express <- function(seurat_obj, gene1, gene2) {
+  # Get the expression matrix for the genes
+  gene1_expr <- Seurat::GetAssayData(seurat_obj, assay = 'RNA', slot = 'data')[gene1, ]
+  gene2_expr <- Seurat::GetAssayData(seurat_obj, assay = 'RNA', slot = 'data')[gene2, ]
+  # Get the metadata for the group
+  group_meta <- seurat_obj$group2
+  # Calculate the ratio of cells not co-expressing the genes in each group
+  not_co_expr <- table(group_meta[gene1_expr > 0 & gene2_expr == 0]) / table(group_meta)
+  return(not_co_expr)
+}
+
+# Calculate the not co-expression ratio for each pair of genes
+not_co_expression_ratios <- list()
+for (pair in gene_pairs) {
+  not_co_expression_ratios[[paste(pair, collapse = "_")]] <- not_co_express(fabio, pair[1], pair[2])
+}
+
+#### gene expression ----
+fabio$group <- factor(fabio$group, levels = c("zeroM", "oneM", "twoM"))
+
+meta <- fabio$group
+
+hopx <- Seurat::GetAssayData(fabio, assay  = "RNA", slot = "data")["Hopx", ]
+mki67 <- Seurat::GetAssayData(fabio, assay  = "RNA", slot = "data")["Mki67", ]
+tbr2 <-  Seurat::GetAssayData(fabio, assay  = "RNA", slot = "data")["Eomes", ]
+neurod1 <- Seurat::GetAssayData(fabio, assay  = "RNA", slot = "data")["Neurod1", ]
+
+hkratio <- table(meta[hopx > 0 & mki67 > 0]) / table(meta[hopx>0])
+tkratio <- table(meta[tbr2 > 0 & mki67 > 0]) / table(meta[tbr2>0])
+
+nd1ratio <- table(meta[neurod1 > 0]) / table(meta)
+hopxratio <- table(meta[hopx > 0]) / table(meta)
+tbr2ratio <- table(meta[tbr2 > 0]) / table(meta)
+mki67ratio <- table(meta[mki67 > 0]) / table(meta)
+
+
+plot_data <- data.frame(
+  Group = names(hopxratio),
+  Hopx_Mki67 = as.numeric(hkratio),
+  Tbr2_Mki67 = as.numeric(tkratio),
+  Neurod1 = as.numeric(nd1ratio),
+  Hopx = as.numeric(hopxratio),
+  Tbr2 = as.numeric(tbr2ratio),
+  Mki67 = as.numeric(mki67ratio)
+)
+
+
+plot_data_long <- plot_data %>%
+  pivot_longer(cols = -Group, 
+               names_to = "Marker", 
+               values_to = "Ratio")
+
+
+ggplot(plot_data_long, aes(x = factor(Group, levels =  c("zeroM", "oneM", "twoM")), y = Ratio, fill = Group)) +
+  geom_bar(stat = "identity") +
+  facet_wrap(~Marker, scales = "free_y") +
+  theme_bw() +
+  labs(title = "Marker Expression Ratios by Group",
+       x = "Group",
+       y = "Ratio") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1),
+        legend.position = "bottom")
+
+DefaultAssay(sub) <- "RNA"
+Idents(sub) <- "tracy_clusters"
+sub <- NormalizeData(sub)
+Seurat::VlnPlot(sub, features = c("Hopx", "Mki67", "Eomes"), layer = "data", )
